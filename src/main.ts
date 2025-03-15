@@ -7,21 +7,21 @@
 
 import { Midi } from "@tonejs/midi";
 import * as Tone from "tone";
+import { TinyCanvas } from "./components/tinyCanvas";
+import { Vec2 } from "./geometries/vec2";
+import { MidiVisualizer } from "./midiVisualizer";
 
 async function loadMidi(url: string): Promise<Midi> {
     const arrayBuffer = await (await fetch(url)).arrayBuffer();
     return new Midi(arrayBuffer);
 }
 
-async function playMidiByTone(midi: Midi) {
+async function playMidiByTone(midi: Midi, now: number) {
     // Tone.jsの準備
     await Tone.start();
-    const synth = new Tone.PolySynth(Tone.Synth).toDestination();
+    const synth = new Tone.PolySynth(Tone.Synth, { oscillator: { type: "square" } }).toDestination();
     synth.maxPolyphony = 128;
     synth.volume.value = -8;
-
-    // 現在の時間を取得
-    const now = Tone.now();
 
     midi.tracks.forEach((track) => {
         track.notes.forEach((note) => {
@@ -38,7 +38,23 @@ async function playMidiByTone(midi: Midi) {
 $(async () => {
     console.log("OK");
 
-    $("body").append($(`<button>`).text("START").on("click", async () => {
-        playMidiByTone(await loadMidi("beating.mid"));
+    const midi = await loadMidi("beating.mid");
+    $("header").append($(`<button>`).text("START").on("click", async () => {
+        console.log("start");
+        const now = Tone.now();
+        playMidiByTone(midi, now);
+        visualizer.start(now);
     }));
+
+    const canvas = new TinyCanvas();
+    const visualizer = new MidiVisualizer(midi, canvas);
+    const main = $("main");
+    main.append(canvas.element);
+    new ResizeObserver(() => {
+        console.log(main.outerWidth(), main.outerHeight());
+        canvas.size = new Vec2(main.outerWidth()!, main.outerHeight()!);
+        visualizer.render();
+    }).observe(main[0]);
+
 });
+
