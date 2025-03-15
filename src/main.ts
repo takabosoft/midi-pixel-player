@@ -63,10 +63,7 @@ class PageController {
         this.rebuildVisualizer();
         const main = $("main");
         main.append(this.canvas.element);
-        new ResizeObserver(() => {
-            this.canvas.size = new Vec2(main.outerWidth()!, main.outerHeight()!);
-            this.visualizer?.render();
-        }).observe(main[0]);
+        new ResizeObserver(() => this.visualizer?.updateCanvasSize(main)).observe(main[0]);
     }
 
     private async open(file: File) {

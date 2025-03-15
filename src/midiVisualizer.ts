@@ -3,6 +3,7 @@ import { Ticker } from "./animation/ticker";
 import { TinyCanvas } from "./components/tinyCanvas";
 import * as Tone from "tone";
 import { Sprite, SpriteManager } from "./spriteManager";
+import { Vec2 } from "./geometries/vec2";
 
 export function rndRange(v1: number, v2: number): number {
     const a = Math.random();
@@ -96,6 +97,13 @@ export class MidiVisualizer {
         this.render();
     }
 
+    updateCanvasSize(parent: JQuery) {
+        const rect = parent[0].getBoundingClientRect();
+        const xResolution = rect.width / (rect.height / this.yResolution);
+        this.canvas.size = new Vec2(xResolution, this.yResolution);
+        this.render();
+    }
+
     render() {
         let playSec = 0;
         if (this.startSec != null) {
@@ -108,15 +116,11 @@ export class MidiVisualizer {
         const canvas = this.canvas;
         canvas.clear();
 
-        const mat = new DOMMatrix();
-        const scale = this.canvas.canvas.height / this.yResolution;
-        mat.scaleSelf(scale, scale, 1);
         const ctx = canvas.ctx;
-        ctx.setTransform(mat);
         ctx.imageSmoothingEnabled = false;
 
-        const xResolution = this.canvas.canvas.width / scale;
-        const startOffset = xResolution / 4;
+        const xResolution = this.canvas.canvas.width;
+        const startOffset = Math.floor(xResolution / 4);
         const col = Math.sin(playSec * 3) * 50 + 100;
         ctx.fillStyle = `rgb(${col}, ${col}, ${col})`;
         ctx.filter = "none";
@@ -125,13 +129,14 @@ export class MidiVisualizer {
         const midiRange = Math.max(this.maxNote - this.minNote, 1);
         
         for (const note of this.notes) {
-            const x = (note.timeSec - playSec) * note.speed + startOffset;
-            if (x + note.sprite.calcRenderWidth(note.width) < 0 || x > xResolution) {
+            const x = Math.round((note.timeSec - playSec) * note.speed + startOffset);
+            const renderWidth = note.sprite.calcRenderWidth(note.width);
+            if (x + renderWidth < 0 || x > xResolution) {
                 continue;
             }
             const yr = 1 - ((note.note - this.minNote) / midiRange);
             const y = yr * (this.yResolution - 16) + 15;
-            const isHighlight = note.timeSec <= playSec && note.timeSec + note.durationSec > playSec;
+            const isHighlight = x <= startOffset && x + renderWidth > startOffset;
             
             note.sprite.draw(ctx, x, y, note.width, isHighlight);
         }
