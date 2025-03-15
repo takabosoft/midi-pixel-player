@@ -14,7 +14,6 @@ export class SpriteSheet {
 
     async init() {
         this._texture = await this.loadTexture();
-        console.log(this._texture);
     }
 
     crop(rc: Rect): HTMLCanvasElement {

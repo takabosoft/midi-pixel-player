@@ -9,18 +9,19 @@ import { Midi } from "@tonejs/midi";
 import * as Tone from "tone";
 import { TinyCanvas } from "./components/tinyCanvas";
 import { Vec2 } from "./geometries/vec2";
-import { MidiVisualizer } from "./midiVisualizer";
+import { MidiVisualizer, MidiVisualizerRandom } from "./midiVisualizer";
 import { SpriteSheet } from "./spriteSheet";
 import { SpriteManager } from "./spriteManager";
+import { Header } from "./components/header";
+
+const timeOffset = 1;
 
 async function loadMidi(url: string): Promise<Midi> {
     const arrayBuffer = await (await fetch(url)).arrayBuffer();
     return new Midi(arrayBuffer);
 }
 
-async function playMidiByTone(midi: Midi, now: number) {
-    // Tone.jsの準備
-    await Tone.start();
+function playMidiByTone(midi: Midi, now: number): Tone.PolySynth<Tone.Synth<Tone.SynthOptions>> {
     const synth = new Tone.PolySynth(Tone.Synth, { oscillator: { type: "square" } }).toDestination();
     synth.maxPolyphony = 128;
     synth.volume.value = -8;
@@ -28,37 +29,79 @@ async function playMidiByTone(midi: Midi, now: number) {
     midi.tracks.forEach((track) => {
         track.notes.forEach((note) => {
             synth.triggerAttackRelease(
-                note.name,  // ノート名 (例: C4, D#5)
-                note.duration, // 持続時間
-                now + note.time, // 再生開始時間
-                note.velocity // 音量
+                note.name,
+                note.duration,
+                now + note.time + timeOffset,
+                note.velocity
             );
         });
     });
+    return synth;
 }
 
-$(async () => {
-    const spriteSheet = new SpriteSheet();
-    await spriteSheet.init();
-    const spriteManager = new SpriteManager(spriteSheet);
-    
-    const midi = await loadMidi("beating.mid");
-    $("header").append($(`<button>`).text("START").on("click", async () => {
-        console.log("start");
+$(() => new PageController().start());
+
+class PageController {
+    private readonly spriteSheet = new SpriteSheet();
+    private spriteManager?: SpriteManager;
+    private readonly canvas = new TinyCanvas();
+    private midi?: Midi;
+    private synth?: Tone.PolySynth<Tone.Synth<Tone.SynthOptions>>;
+    private visualizer?: MidiVisualizer;
+    private random = MidiVisualizerRandom.None;
+    private baseSpeed = 150;
+
+    constructor() {
+        
+    }
+
+    async start() {
+        await this.spriteSheet.init();
+        this.spriteManager = new SpriteManager(this.spriteSheet);
+        this.midi = await loadMidi("beating.mid");
+        const header = new Header(file => this.open(file), () => this.play(), () => this.stop(), s => this.setSpeed(s), r => this.setRandom(r));
+        this.rebuildVisualizer();
+        const main = $("main");
+        main.append(this.canvas.element);
+        new ResizeObserver(() => {
+            this.canvas.size = new Vec2(main.outerWidth()!, main.outerHeight()!);
+            this.visualizer?.render();
+        }).observe(main[0]);
+    }
+
+    private async open(file: File) {
+        this.stop();
+        this.midi = new Midi(await file.arrayBuffer());
+        this.rebuildVisualizer();
+    }
+
+    private async play() {
+        await Tone.start();
         const now = Tone.now();
-        playMidiByTone(midi, now);
-        visualizer.start(now);
-    }));
+        this.synth = playMidiByTone(this.midi!, now);
+        this.visualizer?.start(now);
+    }
 
-    const canvas = new TinyCanvas();
-    const visualizer = new MidiVisualizer(spriteManager, midi, canvas);
-    const main = $("main");
-    main.append(canvas.element);
-    new ResizeObserver(() => {
-        console.log(main.outerWidth(), main.outerHeight());
-        canvas.size = new Vec2(main.outerWidth()!, main.outerHeight()!);
-        visualizer.render();
-    }).observe(main[0]);
+    private stop() {
+        this.synth?.dispose();
+        this.synth = undefined;
+        this.visualizer?.stop();
+    }
 
-});
+    private setSpeed(s: number) {
+        this.stop();
+        this.baseSpeed = s;
+        this.rebuildVisualizer();
+    }
 
+    private setRandom(newRnd: MidiVisualizerRandom) {
+        this.stop();
+        this.random = newRnd;
+        this.rebuildVisualizer();
+    }
+
+    private rebuildVisualizer() {
+        this.visualizer = new MidiVisualizer(this.spriteManager!, this.midi!, timeOffset, this.canvas, this.baseSpeed, this.random);
+        this.visualizer.render();
+    }
+}

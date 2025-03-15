@@ -4,6 +4,11 @@ import { TinyCanvas } from "./components/tinyCanvas";
 import * as Tone from "tone";
 import { Sprite, SpriteManager } from "./spriteManager";
 
+export function rndRange(v1: number, v2: number): number {
+    const a = Math.random();
+    return v1 * (1 - a) + v2 * a;
+}
+
 class VisualizerNote {
     readonly width: number;
     readonly sprite: Sprite;
@@ -20,6 +25,14 @@ class VisualizerNote {
     }
 }
 
+export const enum MidiVisualizerRandom {
+    None = 0,
+    PerTrackSmall,
+    PerTrackLarge,
+    PerNoteSmall,
+    PerNoteLarge,
+}
+
 export class MidiVisualizer {
     private readonly yResolution = 400;
     private startSec?: number;
@@ -31,19 +44,41 @@ export class MidiVisualizer {
     constructor(
         spriteManager: SpriteManager,
         midi: Midi,
+        timeOffset: number,
         private readonly canvas: TinyCanvas,
+        baseSpeed: number,
+        random: MidiVisualizerRandom,
     ) {
-        
         for (const midiTrack of midi.tracks) {
             if (midiTrack.notes.length == 0) { continue; }
 
-            const trackSpeed = 150;// + Math.random() * 60;
+            const trackSpeed = (() => {
+                switch (random) {
+                    default:
+                        return baseSpeed;
+                    case MidiVisualizerRandom.PerTrackSmall:
+                        return baseSpeed + Math.random() * rndRange(-10, 10);
+                    case MidiVisualizerRandom.PerTrackLarge:
+                        return baseSpeed + Math.random() * rndRange(-20, 20);
+                }
+            })();
 
             for (const note of midiTrack.notes) {
                 // 範囲を見ておきます。
                 this.minNote = Math.min(this.minNote, note.midi);
                 this.maxNote = Math.max(this.maxNote, note.midi);
-                this.notes.push(new VisualizerNote(spriteManager, trackSpeed, note.midi, note.time, note.duration));
+
+                const noteSpeed = (() => {
+                    switch (random) {
+                        default:
+                            return trackSpeed;
+                        case MidiVisualizerRandom.PerNoteSmall:
+                            return baseSpeed + Math.random() * rndRange(-10, 10);
+                        case MidiVisualizerRandom.PerNoteLarge:
+                            return baseSpeed + Math.random() * rndRange(-20, 20);
+                    }
+                })();
+                this.notes.push(new VisualizerNote(spriteManager, noteSpeed, note.midi, note.time + timeOffset, note.duration));
             }
         }
 
@@ -51,19 +86,24 @@ export class MidiVisualizer {
     }
 
     start(startSec: number) {
-        console.log("start");
         this.startSec = startSec;
         this.ticker.start();
     }
 
+    stop() {
+        this.startSec = undefined;
+        this.ticker.stop();
+        this.render();
+    }
+
     render() {
-        
         let playSec = 0;
         if (this.startSec != null) {
             playSec = +(Tone.now() - this.startSec);
+            
+            // レイテンシー分調整
+            playSec -= (Tone.getContext().rawContext as any).baseLatency;
         }
-
-        //console.log(playSec)
 
         const canvas = this.canvas;
         canvas.clear();
@@ -75,8 +115,10 @@ export class MidiVisualizer {
         ctx.setTransform(mat);
         ctx.imageSmoothingEnabled = false;
 
-        const startOffset = this.canvas.canvas.width / scale / 2;
-        ctx.fillStyle = "gray";
+        const xResolution = this.canvas.canvas.width / scale;
+        const startOffset = xResolution / 4;
+        const col = Math.sin(playSec * 3) * 50 + 100;
+        ctx.fillStyle = `rgb(${col}, ${col}, ${col})`;
         ctx.filter = "none";
         ctx.fillRect(startOffset, 0, 1, this.yResolution);
 
@@ -84,12 +126,13 @@ export class MidiVisualizer {
         
         for (const note of this.notes) {
             const x = (note.timeSec - playSec) * note.speed + startOffset;
+            if (x + note.sprite.calcRenderWidth(note.width) < 0 || x > xResolution) {
+                continue;
+            }
             const yr = 1 - ((note.note - this.minNote) / midiRange);
             const y = yr * (this.yResolution - 16) + 15;
-
-            // これはsafariでは動かない
-            //ctx.filter = note.timeSec <= playSec && note.timeSec + note.durationSec > playSec ? "drop-shadow(0 0 3px white)" : "none";
             const isHighlight = note.timeSec <= playSec && note.timeSec + note.durationSec > playSec;
+            
             note.sprite.draw(ctx, x, y, note.width, isHighlight);
         }
     }

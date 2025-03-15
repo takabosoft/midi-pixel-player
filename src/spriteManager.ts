@@ -4,6 +4,7 @@ import { Vec2 } from "./geometries/vec2";
 import { SpriteSheet } from "./spriteSheet";
 
 export abstract class Sprite {
+    abstract calcRenderWidth(width: number): number;
     abstract draw(ctx: CanvasRenderingContext2D, x: number, yBase: number, width: number, isHighlight: boolean): void;
 }
 
@@ -49,6 +50,10 @@ class OneSprite extends Sprite {
         this.highlightTexture = makeHighlightTexture(this.texture);
     }
 
+    override calcRenderWidth(width: number): number {
+        return this.rc.width;
+    }
+
     override draw(ctx: CanvasRenderingContext2D, x: number, yBase: number, width: number, isHighlight: boolean): void {
         if (isHighlight) {
             ctx.drawImage(this.highlightTexture, x - 1, yBase - this.rc.height - 1);
@@ -66,6 +71,10 @@ class LoopedSprite extends Sprite {
         super();
         this.texture = spriteSheet.crop(rc);
         this.highlightTexture = makeHighlightTexture(this.texture);
+    }
+
+    override calcRenderWidth(width: number): number {
+        return width;
     }
 
     override draw(ctx: CanvasRenderingContext2D, x: number, yBase: number, width: number, isHighlight: boolean): void {
