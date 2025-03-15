@@ -3,25 +3,53 @@ import { Ticker } from "./animation/ticker";
 import { TinyCanvas } from "./components/tinyCanvas";
 import * as Tone from "tone";
 
+class VisualizerNote {
+    readonly width: number;
+
+    constructor(
+        readonly speed: number, 
+        readonly note: number, 
+        readonly timeSec: number, 
+        readonly durationSec: number
+    ) {
+        this.width = durationSec * speed;
+    }
+}
+
+class VisualizerTrack {
+    readonly notes: VisualizerNote[] = [];
+    constructor() {
+
+    }
+}
+
 export class MidiVisualizer {
     private readonly yResolution = 480; // 480line
     private startSec?: number = 0;
     private readonly ticker = new Ticker(() => this.render());
-    private minMidi = 127;
-    private maxMidi = 0;
-    private trackSpeeds: number[] = [];
+    private minNote = 127;
+    private maxNote = 0;
+    private readonly tracks: VisualizerTrack[] = [];
 
     constructor(
-        private readonly midi: Midi,
+        midi: Midi,
         private readonly canvas: TinyCanvas,
     ) {
-        // 範囲を見ておきます。
-        for (const track of this.midi.tracks) {
-            this.trackSpeeds.push(180 + Math.random() * 60);
+        
+        for (const midiTrack of midi.tracks) {
+            if (midiTrack.notes.length == 0) { continue; }
 
-            for (const note of track.notes) {
-                this.minMidi = Math.min(this.minMidi, note.midi);
-                this.maxMidi = Math.max(this.maxMidi, note.midi);
+            const trackSpeed = 180 + Math.random() * 60;
+
+            const vTrack = new VisualizerTrack();
+            this.tracks.push(vTrack);
+            
+            for (const note of midiTrack.notes) {
+                // 範囲を見ておきます。
+                this.minNote = Math.min(this.minNote, note.midi);
+                this.maxNote = Math.max(this.maxNote, note.midi);
+
+                vTrack.notes.push(new VisualizerNote(trackSpeed, note.midi, note.time, note.duration));
             }
         }
     }
@@ -46,25 +74,14 @@ export class MidiVisualizer {
         mat.scaleSelf(scale, scale, 1);
         canvas.ctx.setTransform(mat);
 
-        
+        const midiRange = Math.max(this.maxNote - this.minNote, 1);
 
-        const midiRange = Math.max(this.maxMidi - this.minMidi, 1);
-
-        this.midi.tracks.forEach((track, trIndex) => {
-
-            const speed = this.trackSpeeds[trIndex];
-            const secToX = (sec: number) => sec * speed;
-        
+        this.tracks.forEach(track => {
             for (const note of track.notes) {
-        
-                const x = secToX(note.time + playSec) + startOffset;
-                const dur = secToX(note.duration);
+                const x = (note.timeSec + playSec) * note.speed + startOffset;
                 canvas.ctx.fillStyle = "red";
-
-                const yr = 1 - ((note.midi - this.minMidi) / midiRange);
-
-                canvas.ctx.fillRect(x, yr * this.yResolution, dur, 1);
-                
+                const yr = 1 - ((note.note - this.minNote) / midiRange);
+                canvas.ctx.fillRect(x, yr * this.yResolution, note.width, 1);
             }
         });
     }
