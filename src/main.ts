@@ -35,9 +35,18 @@ async function playMidiByTone(midi: Midi, now: number) {
     });
 }
 
+async function loadTexture(): Promise<HTMLImageElement> {
+    return new Promise<HTMLImageElement>(r => {
+        const i = new Image();
+        i.onload = () => r(i);
+        i.src = "./texture.png";
+    });
+}
+
 $(async () => {
     console.log("OK");
 
+    const texture = await loadTexture();
     const midi = await loadMidi("beating.mid");
     $("header").append($(`<button>`).text("START").on("click", async () => {
         console.log("start");
@@ -47,7 +56,7 @@ $(async () => {
     }));
 
     const canvas = new TinyCanvas();
-    const visualizer = new MidiVisualizer(midi, canvas);
+    const visualizer = new MidiVisualizer(texture, midi, canvas);
     const main = $("main");
     main.append(canvas.element);
     new ResizeObserver(() => {
