@@ -13,8 +13,10 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@tonejs/midi": "^2.0.28",
     "@types/jquery": "^3.5.32",
     "live-server": "^1.2.2",
+    "tone": "^15.0.4",
     "ts-loader": "^9.5.2",
     "typescript": "^5.8.2",
     "webpack": "^5.98.0",
