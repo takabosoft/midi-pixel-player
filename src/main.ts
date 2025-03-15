@@ -10,6 +10,8 @@ import * as Tone from "tone";
 import { TinyCanvas } from "./components/tinyCanvas";
 import { Vec2 } from "./geometries/vec2";
 import { MidiVisualizer } from "./midiVisualizer";
+import { SpriteSheet } from "./spriteSheet";
+import { SpriteManager } from "./spriteManager";
 
 async function loadMidi(url: string): Promise<Midi> {
     const arrayBuffer = await (await fetch(url)).arrayBuffer();
@@ -35,18 +37,11 @@ async function playMidiByTone(midi: Midi, now: number) {
     });
 }
 
-async function loadTexture(): Promise<HTMLImageElement> {
-    return new Promise<HTMLImageElement>(r => {
-        const i = new Image();
-        i.onload = () => r(i);
-        i.src = "./texture.png";
-    });
-}
-
 $(async () => {
-    console.log("OK");
-
-    const texture = await loadTexture();
+    const spriteSheet = new SpriteSheet();
+    await spriteSheet.init();
+    const spriteManager = new SpriteManager(spriteSheet);
+    
     const midi = await loadMidi("beating.mid");
     $("header").append($(`<button>`).text("START").on("click", async () => {
         console.log("start");
@@ -56,7 +51,7 @@ $(async () => {
     }));
 
     const canvas = new TinyCanvas();
-    const visualizer = new MidiVisualizer(texture, midi, canvas);
+    const visualizer = new MidiVisualizer(spriteManager, midi, canvas);
     const main = $("main");
     main.append(canvas.element);
     new ResizeObserver(() => {
