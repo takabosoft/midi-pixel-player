@@ -1,19 +1,23 @@
 # Midi Pixel Player
 
-MIDIアニメ（MIDIビジュアライゼーション）です。
-ドット絵の乗り物たちが動いたら面白いかな？と思って作り始めたのですが、ドット絵が上手に描けないことに気がついて難航中です。
+MIDIアニメ（MIDIビジュアライゼーション）です。  
+ドット絵の乗り物たちが動いたら面白いかな？と思って作り始めたのですが、ドット絵が上手に描けないことに気がついて難航中です。  
+もっとバリエーションを増やしたい...！
 
-DEMO:
+DEMO:  
 https://takabosoft.github.io/midi-pixel-player/
 
-音符の長さに応じてドット絵を割り当てています。
-短いもの→車（ランダム）
-少し長いもの→トラック
-とても長いもの→電車（ループ）
+音符の長さに応じてドット絵を割り当てています。  
 
-MIDIファイルのパースや再生：[Tone.js](https://tonejs.github.io/) 　Copyright (C) 2014-2024 Yotam Mann
-ドット絵エディタ：EDGE2 Copyright (C) Takabo Soft
-サンプル音楽：Space Soldier 1面 Copyright (C) Takabo Soft
+* 短いもの→車（ランダム）  
+* 少し長いもの→トラック  
+* とても長いもの→電車（ループ）  
+
+### 著作権表示
+
+* MIDIファイルのパースや再生：[Tone.js](https://tonejs.github.io/) 　Copyright (C) 2014-2024 Yotam Mann  
+* ドット絵エディタ：EDGE2 Copyright (C) Takabo Soft  
+* サンプル音楽：Space Soldier 1面 Copyright (C) Takabo Soft  
 
 ### ソースビルド方法
 
