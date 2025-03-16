@@ -35,7 +35,8 @@ export const enum MidiVisualizerRandom {
 }
 
 export class MidiVisualizer {
-    private readonly yResolution = 400;
+    private yResolutionTarget = 400;
+    private yResolution = 400;
     private startSec?: number;
     private readonly ticker = new Ticker(() => this.render());
     private minNote = 127;
@@ -99,7 +100,12 @@ export class MidiVisualizer {
 
     updateCanvasSize(parent: JQuery) {
         const rect = parent[0].getBoundingClientRect();
-        const xResolution = rect.width / (rect.height / this.yResolution);
+        const line = rect.height * window.devicePixelRatio;
+        const scale = Math.max(Math.floor(line / this.yResolutionTarget), 1);
+        console.log(`height: ${line}px, scale: ${scale}`);
+
+        this.yResolution = Math.floor(line / scale);
+        const xResolution = Math.floor(rect.width / (rect.height / this.yResolution));
         this.canvas.size = new Vec2(xResolution, this.yResolution);
         this.render();
     }

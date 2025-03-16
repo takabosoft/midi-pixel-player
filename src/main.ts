@@ -8,7 +8,6 @@
 import { Midi } from "@tonejs/midi";
 import * as Tone from "tone";
 import { TinyCanvas } from "./components/tinyCanvas";
-import { Vec2 } from "./geometries/vec2";
 import { MidiVisualizer, MidiVisualizerRandom } from "./midiVisualizer";
 import { SpriteSheet } from "./spriteSheet";
 import { SpriteManager } from "./spriteManager";
