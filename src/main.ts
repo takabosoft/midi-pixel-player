@@ -98,6 +98,7 @@ class PageController {
 
     private rebuildVisualizer() {
         this.visualizer = new MidiVisualizer(this.spriteManager!, this.midi!, timeOffset, this.canvas, this.baseSpeed, this.random);
+        
         this.visualizer.render();
     }
 }

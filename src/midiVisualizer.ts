@@ -51,6 +51,8 @@ export class MidiVisualizer {
         baseSpeed: number,
         random: MidiVisualizerRandom,
     ) {
+        this.yResolution = canvas.canvas.height;
+        
         for (const midiTrack of midi.tracks) {
             if (midiTrack.notes.length == 0) { continue; }
 
