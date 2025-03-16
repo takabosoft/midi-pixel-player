@@ -5,4 +5,8 @@ export class Button extends Component {
         super();
         this.element = $(`<button>`).text(title).on("click", () => onClick());
     }
+
+    set enable(e: boolean) {
+        this.element.prop("disabled", !e);
+    }
 }

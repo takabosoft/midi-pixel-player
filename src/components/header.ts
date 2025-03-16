@@ -4,8 +4,8 @@ import { Component } from "./component";
 export class Header extends Component {
     private readonly openBtn: Button;
     private readonly filenameEl = $(`<div>`).addClass("filename").text("sample.mid");
-    private readonly playBtn: Button;
-    private readonly stopBtn: Button;
+    readonly playBtn: Button;
+    readonly stopBtn: Button;
 
     constructor(
         onOpen: (file: File) => void,
@@ -41,9 +41,11 @@ export class Header extends Component {
         const rndSelect = $(`<select>`).append(
             $(`<option value="0" selected>`).text("Off"),
             $(`<option value="1">`).text("Per Track Small"),
-            $(`<option value="2">`).text("Per Track Large"),
-            $(`<option value="3">`).text("Per Note Small"),
-            $(`<option value="4">`).text("Per Note Large"),
+            $(`<option value="2">`).text("Per Track Medium"),
+            $(`<option value="3">`).text("Per Track Large"),
+            $(`<option value="4">`).text("Per Note Small"),
+            $(`<option value="5">`).text("Per Note Medium"),
+            $(`<option value="6">`).text("Per Note Large"),
         ).on("change", () => onRandom(parseInt(rndSelect.val() + "")));
 
         

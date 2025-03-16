@@ -29,15 +29,17 @@ class VisualizerNote {
 export const enum MidiVisualizerRandom {
     None = 0,
     PerTrackSmall,
+    PerTrackMedium,
     PerTrackLarge,
     PerNoteSmall,
+    PerNoteMedium,
     PerNoteLarge,
 }
 
 export class MidiVisualizer {
-    private yResolutionTarget = 400;
+    private yResolutionTarget = 300;
     private yResolution = 400;
-    private startSec?: number;
+    private _startSec?: number;
     private readonly ticker = new Ticker(() => this.render());
     private minNote = 127;
     private maxNote = 0;
@@ -61,13 +63,17 @@ export class MidiVisualizer {
                     default:
                         return baseSpeed;
                     case MidiVisualizerRandom.PerTrackSmall:
-                        return baseSpeed + Math.random() * rndRange(-10, 10);
+                        return baseSpeed + Math.random() * rndRange(-baseSpeed * 0.1, baseSpeed * 0.1);
+                    case MidiVisualizerRandom.PerTrackMedium:
+                        return baseSpeed + Math.random() * rndRange(-baseSpeed * 0.2, baseSpeed * 0.2);
                     case MidiVisualizerRandom.PerTrackLarge:
-                        return baseSpeed + Math.random() * rndRange(-20, 20);
+                        return baseSpeed + Math.random() * rndRange(-baseSpeed * 0.4, baseSpeed * 0.4);
                 }
             })();
 
             for (const note of midiTrack.notes) {
+                if (note.duration <= 0) { continue; }
+
                 // 範囲を見ておきます。
                 this.minNote = Math.min(this.minNote, note.midi);
                 this.maxNote = Math.max(this.maxNote, note.midi);
@@ -77,9 +83,11 @@ export class MidiVisualizer {
                         default:
                             return trackSpeed;
                         case MidiVisualizerRandom.PerNoteSmall:
-                            return baseSpeed + Math.random() * rndRange(-10, 10);
+                            return baseSpeed + Math.random() * rndRange(-baseSpeed * 0.1, baseSpeed * 0.1);
+                        case MidiVisualizerRandom.PerNoteMedium:
+                            return baseSpeed + Math.random() * rndRange(-baseSpeed * 0.2, baseSpeed * 0.2);
                         case MidiVisualizerRandom.PerNoteLarge:
-                            return baseSpeed + Math.random() * rndRange(-20, 20);
+                            return baseSpeed + Math.random() * rndRange(-baseSpeed * 0.4, baseSpeed * 0.4);
                     }
                 })();
                 this.notes.push(new VisualizerNote(spriteManager, noteSpeed, note.midi, note.time + timeOffset, note.duration));
@@ -89,13 +97,15 @@ export class MidiVisualizer {
         this.notes.sort((a, b) => b.note - a.note);
     }
 
+    get startSec() { return this._startSec; }
+
     start(startSec: number) {
-        this.startSec = startSec;
+        this._startSec = startSec;
         this.ticker.start();
     }
 
     stop() {
-        this.startSec = undefined;
+        this._startSec = undefined;
         this.ticker.stop();
         this.render();
     }
@@ -114,8 +124,8 @@ export class MidiVisualizer {
 
     render() {
         let playSec = 0;
-        if (this.startSec != null) {
-            playSec = +(Tone.now() - this.startSec);
+        if (this._startSec != null) {
+            playSec = +(Tone.now() - this._startSec);
             
             // レイテンシー分調整
             playSec -= (Tone.getContext().rawContext as any).baseLatency;
